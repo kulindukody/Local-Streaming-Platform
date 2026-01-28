@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block title %}Kulindu's LMS{% endblock %}
+
+{% block breadcrumb %}
+<a href="/">HOME</a>
+<span class="separator">/</span>
+<span class="current">COURSES</span>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="page-title">Available <span class="accent">Courses</span></h2>
+    <p class="page-subtitle mono">SELECT A COURSE TO BEGIN YOUR TRAINING</p>
+    
+    <div class="grid">
+        {% for folder in folders %}
+        <a href="/folder/{{ folder }}" class="card">
+            <div class="card-content">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10zm-8-4h2v2h2v-2h2v-2h-2v-2h-2v2h-2v2z"/>
+                    </svg>
+                </div>
+                <h3 class="card-title">{{ folder }}</h3>
+                <p class="card-meta mono">COURSE MODULE</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    
+    {% if not folders %}
+    <div class="empty-state">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10z"/>
+        </svg>
+        <h3>NO COURSES FOUND</h3>
+        <p class="mono">Add course folders to get started</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

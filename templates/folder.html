@@ -1,0 +1,89 @@
+{% extends "layout.html" %} {% block title %}{{ folder }} - Learning Platform{%
+endblock %} {% block breadcrumb %}
+<a href="/">HOME</a>
+<span class="separator">/</span>
+<a href="/">COURSES</a>
+<span class="separator">/</span>
+<span class="current">{{ folder | upper }}</span>
+{% endblock %} {% block content %}
+<div class="container">
+  <h2 class="page-title">{{ folder }}</h2>
+  <p class="page-subtitle mono">COURSE CONTENT LIBRARY</p>
+
+  <div class="grid">
+    {% for item in items %} {% if item.type == "folder" %}
+    <a href="/folder/{{ folder }}/{{ item.name }}" class="card">
+      <div class="card-content">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10z"
+            />
+          </svg>
+        </div>
+        <h3 class="card-title">{{ item.name }}</h3>
+        <p class="card-meta mono">SUBFOLDER</p>
+      </div>
+    </a>
+    {% else %}
+    <a href="/watch/{{ folder }}/{{ item.name }}" class="card">
+      <div
+        class="card-image"
+        style="background-image:url('/static/thumbnails/{{ item.thumb }}')"
+      >
+        <div class="play-overlay">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="card-content">
+        <h3 class="card-title">
+          <svg
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+            style="width: 20px; height: 20px; fill: var(--accent)"
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          {{ item.name }}
+        </h3>
+        <div class="card-stats">
+          <span class="card-stat">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+              />
+            </svg>
+            VIDEO
+          </span>
+          {% if item.size %}
+          <span class="card-stat">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"
+              />
+            </svg>
+            {{ item.size }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% endif %} {% endfor %}
+  </div>
+
+  {% if not items %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+      />
+    </svg>
+    <h3>FOLDER IS EMPTY</h3>
+    <p class="mono">No content available in this directory</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
