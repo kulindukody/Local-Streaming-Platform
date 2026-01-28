@@ -1,6 +1,8 @@
 import os
 from flask import Flask, render_template, send_file, abort, request, Response
 import cv2
+from urllib.parse import quote, unquote
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VIDEO_DIR = os.path.join(BASE_DIR, "videos")
@@ -24,8 +26,13 @@ def index():
     folders = [f for f in os.listdir(VIDEO_DIR) if os.path.isdir(os.path.join(VIDEO_DIR, f))]
     return render_template("index.html", folders=folders)
 
+from urllib.parse import unquote
+
 @app.route("/folder/<path:folder>")
 def folder_view(folder):
+    # Decode URL-encoded folder names (handles #, spaces, etc.)
+    folder = unquote(folder)
+
     full_path = os.path.join(VIDEO_DIR, folder)
     if not os.path.exists(full_path):
         abort(404)
@@ -34,38 +41,60 @@ def folder_view(folder):
     for item in os.listdir(full_path):
         item_path = os.path.join(full_path, item)
         if os.path.isdir(item_path):
+            # Subfolder
             items.append({"type": "folder", "name": item})
-        elif item.lower().endswith(".mp4"):
-            safe_name = f"{folder}_{item}"
-            safe_name = safe_name.replace("/", "_").replace(" ", "_")
-
-            thumb_file = safe_name + ".jpg"
-            thumb_path = os.path.join(THUMB_DIR, thumb_file)
-
-            generate_thumbnail(item_path, thumb_path)
-
-            items.append({
-                "type": "video",
-                "name": item,
-                "thumb": thumb_file
-            })
-
+        else:
+            # Determine file type
+            ext = item.lower().split('.')[-1]
+            if ext in ["mp4", "mov", "avi"]:
+                file_type = "video"
+                # Safe thumbnail name
+                safe_name = f"{folder}_{item}".replace("/", "_").replace(" ", "_").replace("#", "_")
+                thumb_file = safe_name + ".jpg"
+                thumb_path = os.path.join(THUMB_DIR, thumb_file)
+                generate_thumbnail(item_path, thumb_path)
+                items.append({"type": file_type, "name": item, "thumb": thumb_file})
+            elif ext in ["jpg", "jpeg", "png", "gif"]:
+                file_type = "image"
+                items.append({"type": file_type, "name": item, "thumb": item})
+            elif ext in ["pdf", "html", "txt"]:
+                file_type = "document"
+                items.append({"type": file_type, "name": item})
+            else:
+                # Ignore other unknown file types
+                continue
 
     return render_template("folder.html", folder=folder, items=items)
 
+
+
+from urllib.parse import quote, unquote
+
 @app.route("/watch/<path:video_path>")
 def watch(video_path):
+    # Decode URL-encoded path
+    video_path = unquote(video_path)
+
+    # Split folder and file name
     folder, video_name = os.path.split(video_path)
+
+    # Encode video_path for streaming link
+    encoded_video_path = quote(video_path)
+
     return render_template(
         "player.html",
         video_name=video_name,
         folder=folder,
-        video_path=f"/stream/{video_path}"
+        video_path=f"/stream/{encoded_video_path}"
     )
+
 
 
 @app.route("/stream/<path:video_path>")
 def stream(video_path):
+    # Decode URL-encoded path
+    video_path = unquote(video_path)
+
     video = os.path.join(VIDEO_DIR, video_path)
     if not os.path.exists(video):
         abort(404)
@@ -77,10 +106,15 @@ def stream(video_path):
     size = os.path.getsize(video)
     byte1, byte2 = 0, None
 
-    m = range_header.replace('bytes=', '').split('-')
-    byte1 = int(m[0])
-    if len(m) > 1 and m[1]:
-        byte2 = int(m[1])
+    # Parse Range header
+    try:
+        m = range_header.replace('bytes=', '').split('-')
+        byte1 = int(m[0])
+        if len(m) > 1 and m[1]:
+            byte2 = int(m[1])
+    except ValueError:
+        byte1 = 0
+        byte2 = None
 
     length = size - byte1 if byte2 is None else byte2 - byte1 + 1
 
@@ -90,7 +124,7 @@ def stream(video_path):
 
     rv = Response(data, 206, mimetype='video/mp4', direct_passthrough=True)
     rv.headers.add('Content-Range', f'bytes {byte1}-{byte1 + length - 1}/{size}')
+    rv.headers.add('Accept-Ranges', 'bytes')
     return rv
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
