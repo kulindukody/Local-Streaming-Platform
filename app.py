@@ -49,7 +49,7 @@ def folder_view(folder):
         else:
             # Determine file type
             ext = item.lower().split('.')[-1]
-            if ext in ["mp4", "mov", "avi", "mkv"]:
+            if ext in ["mp4", "mov", "avi", "mkv","ts"]:
                 file_type = "video"
                 # Safe thumbnail name
                 safe_name = f"{folder}_{item}".replace("/", "_").replace(" ", "_").replace("#", "_")
@@ -60,7 +60,7 @@ def folder_view(folder):
             elif ext in ["jpg", "jpeg", "png", "gif"]:
                 file_type = "image"
                 items.append({"type": file_type, "name": item, "thumb": item})
-            elif ext in ["pdf", "html", "txt"]:
+            elif ext in ["pdf", "html", "txt","zip"]:
                 file_type = "document"
                 items.append({"type": file_type, "name": item})
             else:
