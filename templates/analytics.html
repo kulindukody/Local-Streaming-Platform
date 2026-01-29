@@ -1,0 +1,116 @@
+<!-- templates/analytics.html -->
+{% extends "layout.html" %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="page-title">PLATFORM ANALYTICS</h2>
+  <p class="page-subtitle mono">LOCAL STREAMING METRICS</p>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">▶</div>
+      <div class="stat-value">{{ total_views }}</div>
+      <div class="stat-label mono">TOTAL PLAYS</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">🎬</div>
+      <div class="stat-value">{{ total_videos }}</div>
+      <div class="stat-label mono">VIDEOS</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">📁</div>
+      <div class="stat-value">{{ total_folders }}</div>
+      <div class="stat-label mono">COURSES</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">⏱</div>
+      <div class="stat-value">{{ total_watch_minutes }}</div>
+      <div class="stat-label mono">WATCH MINUTES</div>
+    </div>
+  </div>
+
+  <h3 class="section-title">MOST WATCHED</h3>
+  <table class="analytics-table">
+    <tr>
+      <th>VIDEO</th>
+      <th>PLAYS</th>
+      <th>LAST WATCHED</th>
+    </tr>
+    {% for v in top_videos %}
+    <tr>
+      <td>{{ v.name }}</td>
+      <td>{{ v.views }}</td>
+      <td class="mono">{{ v.last }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<style>
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 24px;
+  text-align: center;
+  transition: .25s;
+}
+
+.stat-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 30px var(--glow);
+}
+
+.stat-icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.section-title {
+  margin: 30px 0 10px;
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+}
+
+.analytics-table th,
+.analytics-table td {
+  border: 1px solid var(--border);
+  padding: 12px;
+  text-align: left;
+}
+
+.analytics-table th {
+  background: #050505;
+}
+
+.analytics-table tr:hover {
+  background: rgba(225,29,29,.08);
+}
+</style>
+
+{% endblock %}
