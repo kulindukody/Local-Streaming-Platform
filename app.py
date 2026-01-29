@@ -49,7 +49,7 @@ def folder_view(folder):
         else:
             # Determine file type
             ext = item.lower().split('.')[-1]
-            if ext in ["mp4", "mov", "avi"]:
+            if ext in ["mp4", "mov", "avi", "mkv"]:
                 file_type = "video"
                 # Safe thumbnail name
                 safe_name = f"{folder}_{item}".replace("/", "_").replace(" ", "_").replace("#", "_")
