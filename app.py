@@ -2,11 +2,14 @@ import os
 from flask import Flask, render_template, send_file, abort, request, Response
 import cv2
 from urllib.parse import quote, unquote
+import mimetypes
+
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VIDEO_DIR = os.path.join(BASE_DIR, "videos")
 THUMB_DIR = os.path.join(BASE_DIR, "static", "thumbnails")
+BASE_CONTENT_DIR = VIDEO_DIR
 
 app = Flask(__name__)
 
@@ -126,5 +129,27 @@ def stream(video_path):
     rv.headers.add('Content-Range', f'bytes {byte1}-{byte1 + length - 1}/{size}')
     rv.headers.add('Accept-Ranges', 'bytes')
     return rv
+
+@app.route("/open/<path:relative_path>")
+def open_file(relative_path):
+    full_path = os.path.normpath(
+        os.path.join(BASE_CONTENT_DIR, relative_path)
+    )
+
+    # Prevent path traversal
+    if not full_path.startswith(os.path.abspath(BASE_CONTENT_DIR)):
+        abort(403)
+
+    if not os.path.isfile(full_path):
+        print("[OPEN 404]", full_path)  # DEBUG LINE
+        abort(404)
+
+    mime, _ = mimetypes.guess_type(full_path)
+
+    return send_file(
+        full_path,
+        mimetype=mime,
+        as_attachment=False
+    )
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

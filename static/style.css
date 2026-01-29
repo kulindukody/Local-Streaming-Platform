@@ -416,3 +416,31 @@ header {
 .card:hover .play-overlay {
   opacity: 1;
 }
+
+.doc-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+  height: 160px;
+  position: relative;
+}
+
+.doc-preview svg {
+  width: 64px;
+  height: 64px;
+  fill: var(--accent);
+  opacity: 0.9;
+}
+
+.doc-ext {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: var(--accent);
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: bold;
+}

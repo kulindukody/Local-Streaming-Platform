@@ -1,96 +1,104 @@
-{% extends "layout.html" %}
-
-{% block title %}{{ folder }} - Learning Platform{% endblock %}
-
-{% block breadcrumb %}
+{% extends "layout.html" %} {% block title %}{{ folder }} - Learning Platform{%
+endblock %} {% block breadcrumb %}
 <a href="/">HOME</a>
 <span class="separator">/</span>
 <a href="/">COURSES</a>
 <span class="separator">/</span>
 <span class="current">{{ folder | upper }}</span>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="container">
   <h2 class="page-title">{{ folder }}</h2>
   <p class="page-subtitle mono">COURSE CONTENT LIBRARY</p>
 
   <div class="grid">
-    {% for item in items %}
-      {% if item.type == "folder" %}
-        <a href="/folder/{{ folder | urlencode }}/{{ item.name | urlencode }}" class="card">
-          <div class="card-content">
-            <div class="card-icon">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10z"/>
-              </svg>
-            </div>
-            <h3 class="card-title">{{ item.name }}</h3>
-            <p class="card-meta mono">SUBFOLDER</p>
-          </div>
-        </a>
+    {% for item in items %} {% if item.type == "folder" %}
+    <a
+      href="/folder/{{ folder | urlencode }}/{{ item.name | urlencode }}"
+      class="card"
+    >
+      <div class="card-content">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M20 6h-8l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"
+            />
+          </svg>
+        </div>
+        <h3 class="card-title">{{ item.name }}</h3>
+        <p class="card-meta mono">SUBFOLDER</p>
+      </div>
+    </a>
 
-      {% elif item.type == "video" %}
-        <a href="/watch/{{ folder | urlencode }}/{{ item.name | urlencode }}" class="card">
-          <div class="card-image" style="background-image:url('/static/thumbnails/{{ item.thumb | urlencode }}')">
-            <div class="play-overlay">
-              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-          </div>
-          <div class="card-content">
-            <h3 class="card-title">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;fill:var(--accent)">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-              {{ item.name }}
-            </h3>
-            <div class="card-stats">
-              <span class="card-stat">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-                VIDEO
-              </span>
-              {% if item.size %}
-              <span class="card-stat">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
-                </svg>
-                {{ item.size }}
-              </span>
-              {% endif %}
-            </div>
-          </div>
-        </a>
+    {% elif item.type == "video" %}
+    <a
+      href="/watch/{{ folder | urlencode }}/{{ item.name | urlencode }}"
+      class="card"
+    >
+      <div
+        class="card-image"
+        style="background-image:url('/static/thumbnails/{{ item.thumb | urlencode }}')"
+      >
+        <div class="play-overlay">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+        </div>
+      </div>
+      <div class="card-content">
+        <h3 class="card-title">{{ item.name }}</h3>
+        <p class="card-meta mono">VIDEO</p>
+      </div>
+    </a>
 
-      {% elif item.type == "image" %}
-        <a href="/static/folder/{{ folder | urlencode }}/{{ item.name | urlencode }}" class="card">
-          <div class="card-image" style="background-image:url('/static/folder/{{ folder | urlencode }}/{{ item.name | urlencode }}')"></div>
-          <div class="card-content">
-            <h3 class="card-title">{{ item.name }}</h3>
-            <p class="card-meta mono">IMAGE</p>
-          </div>
-        </a>
+    {% elif item.type == "image" %}
+    <a
+      href="/open/{{ folder | urlencode }}/{{ item.name | urlencode }}"
+      class="card"
+      target="_blank"
+    >
+      <div
+        class="card-image"
+        style="background-image:url('/static/folder/{{ folder | urlencode }}/{{ item.name | urlencode }}')"
+      ></div>
+      <div class="card-content">
+        <h3 class="card-title">{{ item.name }}</h3>
+        <p class="card-meta mono">IMAGE</p>
+      </div>
+    </a>
 
-      {% elif item.type == "document" %}
-        <a href="/static/folder/{{ folder | urlencode }}/{{ item.name | urlencode }}" class="card">
-          <div class="card-content">
-            <h3 class="card-title">{{ item.name }}</h3>
-            <p class="card-meta mono">DOCUMENT</p>
-          </div>
-        </a>
-      {% endif %}
-    {% endfor %}
+    {% elif item.type == "document" %}
+    <a
+      href="/open/{{ folder | urlencode }}/{{ item.name | urlencode }}"
+      class="card"
+      target="_blank"
+    >
+      <div class="card-image doc-preview">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"
+          />
+        </svg>
+        <span class="doc-ext mono">
+          {{ item.name.split('.')[-1] | upper }}
+        </span>
+      </div>
+      <div class="card-content">
+        <h3 class="card-title">{{ item.name }}</h3>
+        <p class="card-meta mono">DOCUMENT</p>
+      </div>
+    </a>
+
+    {% endif %} {% endfor %}
   </div>
 
   {% if not items %}
-    <div class="empty-state">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-      </svg>
-      <h3>FOLDER IS EMPTY</h3>
-      <p class="mono">No content available in this directory</p>
-    </div>
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+      />
+    </svg>
+    <h3>FOLDER IS EMPTY</h3>
+    <p class="mono">No content available in this directory</p>
+  </div>
   {% endif %}
 </div>
 {% endblock %}
