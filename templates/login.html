@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+{% block title %}System Auth // LMS{% endblock %}
+{% block content %}
+<div class="login-screen">
+    <div class="terminal-box">
+        <div class="terminal-header">
+            <span>SECURE_LOGIN_V3</span>
+            <span>STATUS: READY</span>
+        </div>
+
+        <h2 style="margin-bottom: 30px; letter-spacing: 2px;">AUTHORIZATION REQUIRED</h2>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div
+            style="color: var(--accent); font-family: 'Share Tech Mono', monospace; font-size: 12px; margin-bottom: 20px;">
+            >> ERROR: {{ messages[0] }}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="text" name="username" class="terminal-input" placeholder="ACCESS_ID" required autofocus>
+            <input type="password" name="password" class="terminal-input" placeholder="ACCESS_KEY" required>
+            <button type="submit" class="terminal-btn">EXECUTE LOGIN</button>
+        </form>
+
+        <div style="margin-top: 30px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--muted);">
+            WARNING: Unauthorized access attempts are logged.
+            IP: {{ request.remote_addr }}
+        </div>
+    </div>
+</div>
+{% endblock %}

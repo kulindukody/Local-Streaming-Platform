@@ -1,16 +1,28 @@
 import os
-from flask import Flask, render_template, send_file, abort, request, Response
+from flask import Flask, render_template, send_file, abort, request, Response, redirect, url_for, flash
 import cv2
 from urllib.parse import quote, unquote
 import mimetypes
 import json
 from datetime import datetime
+import logging
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+
+# Configure Logging
+logging.basicConfig(
+    filename='app.log',
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+)
 
 mimetypes.add_type('video/mp4', '.mp4')
 mimetypes.add_type('video/x-matroska', '.mkv')
 mimetypes.add_type('video/mp2t', '.ts')
 mimetypes.add_type('video/webm', '.webm')
 mimetypes.add_type('video/avi', '.avi')
+mimetypes.add_type('video/quicktime', '.mov')
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,6 +31,25 @@ THUMB_DIR = os.path.join(BASE_DIR, "static", "thumbnails")
 BASE_CONTENT_DIR = VIDEO_DIR
 
 app = Flask(__name__)
+app.secret_key = 'super-secret-key' # In a real app, use a proper secret key
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# Simple user model for local use
+class User(UserMixin):
+    def __init__(self, id):
+        self.id = id
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User(user_id)
+
+# Hardcoded user for local streaming (can be expanded later)
+USERS = {
+    "admin": generate_password_hash("admin123")
+}
 
 os.makedirs(THUMB_DIR, exist_ok=True)
 
@@ -43,14 +74,52 @@ def generate_thumbnail(video_path, thumb_path):
         cv2.imwrite(thumb_path, frame)
     cap.release()
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        if username in USERS and check_password_hash(USERS[username], password):
+            user = User(username)
+            login_user(user)
+            logging.info(f"User {username} logged in")
+            return redirect(url_for("index"))
+        flash("Invalid username or password")
+    return render_template("login.html")
+
+@app.route("/logout")
+@login_required
+def logout():
+    logging.info(f"User {current_user.id} logged out")
+    logout_user()
+    return redirect(url_for("login"))
+
 @app.route("/")
+@login_required
 def index():
     folders = [f for f in os.listdir(VIDEO_DIR) if os.path.isdir(os.path.join(VIDEO_DIR, f))]
-    return render_template("index.html", folders=folders)
+    
+    # Fetch "Continue Watching" from analytics
+    data = load_analytics()
+    # Sort by 'last' timestamp and take top 4
+    history = []
+    for path, entry in data.items():
+        if entry.get("last"):
+            history.append({
+                "path": path,
+                "name": os.path.basename(path),
+                "folder": os.path.dirname(path),
+                "last": entry["last"],
+                "views": entry["views"]
+            })
+    history = sorted(history, key=lambda x: x["last"], reverse=True)[:4]
+    
+    return render_template("index.html", folders=folders, history=history)
 
 from urllib.parse import unquote
 
 @app.route("/folder/<path:folder>")
+@login_required
 def folder_view(folder):
     # Decode URL-encoded folder names (handles #, spaces, etc.)
     folder = unquote(folder)
@@ -93,6 +162,7 @@ def folder_view(folder):
 from urllib.parse import quote, unquote
 
 @app.route("/watch/<path:video_path>")
+@login_required
 def watch(video_path):
     folder, video_name = os.path.split(video_path)
 
@@ -116,6 +186,7 @@ def watch(video_path):
     )
 
 @app.route("/analytics/progress", methods=["POST"])
+@login_required
 def analytics_progress():
     payload = request.json
     video = payload["video"]
@@ -131,6 +202,7 @@ def analytics_progress():
 
 
 @app.route("/stream/<path:video_path>")
+@login_required
 def stream(video_path):
     video_path = unquote(video_path)
     video = os.path.join(VIDEO_DIR, video_path)
@@ -189,6 +261,7 @@ def stream(video_path):
     return rv
 
 @app.route("/open/<path:relative_path>")
+@login_required
 def open_file(relative_path):
     full_path = os.path.normpath(
         os.path.join(BASE_CONTENT_DIR, relative_path)
@@ -211,6 +284,7 @@ def open_file(relative_path):
     )
 
 @app.route("/analytics")
+@login_required
 def analytics():
     data = load_analytics()
 
@@ -238,6 +312,103 @@ def analytics():
         total_folders=total_folders,
         top_videos=top_videos
     )
+
+# File Management Routes
+@app.route("/actions/rename", methods=["POST"])
+@login_required
+def rename_file():
+    data = request.json
+    relative_old_path = unquote(data["old_path"])
+    old_path = os.path.join(VIDEO_DIR, relative_old_path)
+    new_name = data["new_name"]
+    directory = os.path.dirname(old_path)
+    new_path = os.path.join(directory, new_name)
+
+    if not os.path.normpath(new_path).startswith(os.path.normpath(VIDEO_DIR)):
+        return {"ok": False, "error": "Access denied"}, 403
+
+    try:
+        os.rename(old_path, new_path)
+        logging.info(f"File renamed from {old_path} to {new_path} by {current_user.id}")
+        return {"ok": True}
+    except Exception as e:
+        logging.error(f"Error renaming file: {e}")
+        return {"ok": False, "error": str(e)}, 500
+
+@app.route("/actions/delete", methods=["POST"])
+@login_required
+def delete_file():
+    data = request.json
+    relative_path = unquote(data["path"])
+    file_path = os.path.normpath(os.path.join(VIDEO_DIR, relative_path))
+
+    if not file_path.startswith(os.path.normpath(VIDEO_DIR)):
+        return {"ok": False, "error": "Access denied"}, 403
+
+    try:
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+            logging.info(f"File deleted: {file_path} by {current_user.id}")
+        elif os.path.isdir(file_path):
+            import shutil
+            shutil.rmtree(file_path)
+            logging.info(f"Directory deleted: {file_path} by {current_user.id}")
+        return {"ok": True}
+    except Exception as e:
+        logging.error(f"Error deleting file/dir: {e}")
+        return {"ok": False, "error": str(e)}, 500
+
+@app.route("/logs")
+@login_required
+def view_logs():
+    if not os.path.exists("app.log"):
+        return render_template("logs.html", logs=["No logs found."])
+    with open("app.log", "r") as f:
+        lines = f.readlines()[-100:]
+    return render_template("logs.html", logs=lines)
+
+@app.route("/api/logs")
+@login_required
+def get_logs_json():
+    if not os.path.exists("app.log"):
+        return {"logs": []}
+    with open("app.log", "r") as f:
+        lines = f.readlines()[-100:]
+    return {"logs": lines}
+
+@app.route("/api/search")
+@login_required
+def search():
+    query = request.args.get("q", "").lower()
+    results = []
+    for root, dirs, files in os.walk(VIDEO_DIR):
+        for name in dirs + files:
+            if query in name.lower():
+                rel_path = os.path.relpath(os.path.join(root, name), VIDEO_DIR)
+                # Check for video extensions
+                ext = name.split(".")[-1].lower() if "." in name else ""
+                is_video = ext in ["mp4", "mkv", "webm", "avi", "ts", "mov"]
+                is_dir = os.path.isdir(os.path.join(root, name))
+                
+                if is_video or is_dir:
+                    results.append({
+                        "name": name,
+                        "path": rel_path.replace("\\", "/"),
+                        "type": "video" if is_video else "folder"
+                    })
+    return {"results": results[:10]}
+
+@app.route("/download/<path:file_path>")
+@login_required
+def download_file(file_path):
+    file_path = unquote(file_path)
+    full_path = os.path.normpath(os.path.join(VIDEO_DIR, file_path))
+    
+    if not full_path.startswith(os.path.normpath(VIDEO_DIR)) or not os.path.isfile(full_path):
+        abort(403)
+        
+    logging.info(f"File downloaded: {full_path} by {current_user.id}")
+    return send_file(full_path, as_attachment=True)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

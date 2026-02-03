@@ -1,36 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Kulindu's LMS{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>{% block title %}LMS // TERMINAL{% endblock %}</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
-    <header>
+    <header id="navbar">
         <div class="header-inner">
-            <a href="/" class="brand">
-                <div class="logo-icon">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm-1-10h2v4h-2zm0 6h2v2h-2z"/>
-                    </svg>
+            <div style="display: flex; align-items: center; gap: 40px;">
+                <a href="/" class="brand">
+                    <span class="brand-title">L Media Server</span>
+                    <span class="brand-subtitle">SYSTEM VERSION 4.1.0 // FINAL</span>
+                </a>
+
+                {% if current_user.is_authenticated %}
+                <div class="search-container">
+                    <input type="text" id="global-search" class="terminal-input" placeholder="SEARCH_DATABASE..."
+                        style="margin-bottom: 0; height: 35px; width: 250px; font-size: 12px;">
+                    <div id="search-results" class="search-results-dropdown"></div>
                 </div>
-                <div class="brand-text">
-                    <h1>Open Source LMS v1</h1>
-                    <p class="mono">LOCAL MEDIA SERVER</p>
-                </div>
-            </a>
-            <div class="breadcrumb mono">
-                {% block breadcrumb %}
-                <a href="/">HOME</a>
-                {% endblock %}
+                {% endif %}
             </div>
+
+            <nav class="nav-menu">
+                {% if current_user.is_authenticated %}
+                <a href="/" class="nav-link">Access_Root</a>
+                <a href="/analytics" class="nav-link">Telemetry</a>
+                <div class="user-status mono" style="margin-left: 20px; color: var(--accent);">
+                    [USR:{{ current_user.id }}]
+                    <a href="/logout" style="color: var(--muted); text-decoration: none; margin-left:10px;">[LOGOUT]</a>
+                </div>
+                {% else %}
+                <a href="/login" class="nav-link">Auth_Request</a>
+                {% endif %}
+            </nav>
         </div>
     </header>
 
     <main>
-        {% block content %}{% endblock %}
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
     </main>
+
+    <footer
+        style="padding: 40px 0; text-align: center; color: var(--muted); font-family:'Share Tech Mono', monospace; font-size: 10px;">
+        <div class="container">
+            SECURE LOCAL STREAMING ENVIRONMENT // VERSION 4.1.2 // STABLE_BUILD
+        </div>
+    </footer>
+
+    <script>
+        // Global Search Logic
+        const searchInput = document.getElementById('global-search');
+        const resultsDropdown = document.getElementById('search-results');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', async (e) => {
+                const query = e.target.value.trim();
+                if (query.length < 2) {
+                    resultsDropdown.style.display = 'none';
+                    return;
+                }
+
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data.results.length > 0) {
+                    resultsDropdown.innerHTML = data.results.map(item => `
+                        <div class="search-result-item" onclick="location.href='/${item.type === 'video' ? 'watch' : 'folder'}/${item.path}'">
+                            <span class="mono" style="color: var(--accent); font-size: 10px;">[${item.type.toUpperCase()}]</span>
+                            <span style="margin-left: 10px;">${item.name}</span>
+                        </div>
+                    `).join('');
+                    resultsDropdown.style.display = 'block';
+                } else {
+                    resultsDropdown.innerHTML = '<div class="search-result-item mono" style="color: var(--muted);">NO_RESULTS_FOUND</div>';
+                    resultsDropdown.style.display = 'block';
+                }
+            });
+
+            // Close dropdown on outside click
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !resultsDropdown.contains(e.target)) {
+                    resultsDropdown.style.display = 'none';
+                }
+            });
+        }
+    </script>
 </body>
+
 </html>

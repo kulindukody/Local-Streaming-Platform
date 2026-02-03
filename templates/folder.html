@@ -1,104 +1,132 @@
-{% extends "layout.html" %} {% block title %}{{ folder }} - Learning Platform{%
-endblock %} {% block breadcrumb %}
-<a href="/">HOME</a>
-<span class="separator">/</span>
-<a href="/">COURSES</a>
-<span class="separator">/</span>
-<span class="current">{{ folder | upper }}</span>
-{% endblock %} {% block content %}
-<div class="container">
-  <h2 class="page-title">{{ folder }}</h2>
-  <p class="page-subtitle mono">COURSE CONTENT LIBRARY</p>
-
-  <div class="grid">
-    {% for item in items %} {% if item.type == "folder" %}
-    <a
-      href="/folder/{{ folder | urlencode }}/{{ item.name | urlencode }}"
-      class="card"
-    >
-      <div class="card-content">
-        <div class="card-icon">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M20 6h-8l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"
-            />
-          </svg>
-        </div>
-        <h3 class="card-title">{{ item.name }}</h3>
-        <p class="card-meta mono">SUBFOLDER</p>
-      </div>
-    </a>
-
-    {% elif item.type == "video" %}
-    <a
-      href="/watch/{{ folder | urlencode }}/{{ item.name | urlencode }}"
-      class="card"
-    >
-      <div
-        class="card-image"
-        style="background-image:url('/static/thumbnails/{{ item.thumb | urlencode }}')"
-      >
-        <div class="play-overlay">
-          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-        </div>
-      </div>
-      <div class="card-content">
-        <h3 class="card-title">{{ item.name }}</h3>
-        <p class="card-meta mono">VIDEO</p>
-      </div>
-    </a>
-
-    {% elif item.type == "image" %}
-    <a
-      href="/open/{{ folder | urlencode }}/{{ item.name | urlencode }}"
-      class="card"
-      target="_blank"
-    >
-      <div
-        class="card-image"
-        style="background-image:url('/static/folder/{{ folder | urlencode }}/{{ item.name | urlencode }}')"
-      ></div>
-      <div class="card-content">
-        <h3 class="card-title">{{ item.name }}</h3>
-        <p class="card-meta mono">IMAGE</p>
-      </div>
-    </a>
-
-    {% elif item.type == "document" %}
-    <a
-      href="/open/{{ folder | urlencode }}/{{ item.name | urlencode }}"
-      class="card"
-      target="_blank"
-    >
-      <div class="card-image doc-preview">
-        <svg viewBox="0 0 24 24">
-          <path
-            d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"
-          />
-        </svg>
-        <span class="doc-ext mono">
-          {{ item.name.split('.')[-1] | upper }}
-        </span>
-      </div>
-      <div class="card-content">
-        <h3 class="card-title">{{ item.name }}</h3>
-        <p class="card-meta mono">DOCUMENT</p>
-      </div>
-    </a>
-
-    {% endif %} {% endfor %}
-  </div>
-
-  {% if not items %}
-  <div class="empty-state">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
-      />
-    </svg>
-    <h3>FOLDER IS EMPTY</h3>
-    <p class="mono">No content available in this directory</p>
-  </div>
-  {% endif %}
+{% extends "layout.html" %}
+{% block title %}{{ folder }} // REGISTRY{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
+  <h2 class="section-title" style="margin-bottom: 0;">{{ folder }}</h2>
+  <div class="mono" style="font-size: 12px; color: var(--muted);">PATH: /VIDEO/{{ folder | upper }}</div>
 </div>
+
+<div class="content-grid">
+  {% for item in items %}
+  <div class="item-card" id="item-{{ loop.index }}">
+    {% if item.type == 'video' %}
+    <div onclick="location.href='/watch/{{ folder | urlencode }}/{{ item.name | urlencode }}'" style="cursor: pointer;">
+      <img class="item-thumb" src="/static/thumbnails/{{ item.thumb }}"
+        onerror="this.src='https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80'"
+        alt="{{ item.name }}">
+    </div>
+    {% elif item.type == 'folder' %}
+    <div onclick="location.href='/folder/{{ folder | urlencode }}/{{ item.name | urlencode }}'"
+      style="cursor: pointer;">
+      <div
+        style="aspect-ratio: 16/9; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--accent)">
+          <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+        </svg>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="item-info">
+      <div class="item-title" title="{{ item.name }}">{{ item.name }}</div>
+      <div class="item-actions">
+        <button class="action-btn" onclick="openRenameModal('{{ folder }}/{{ item.name }}')">RENAME</button>
+        <button class="action-btn delete"
+          onclick="openPurgeModal('{{ folder }}/{{ item.name }}', 'item-{{ loop.index }}')">PURGE</button>
+        {% if item.type == 'video' %}
+        <a href="/download/{{ folder | urlencode }}/{{ item.name | urlencode }}" class="action-btn"
+          style="text-decoration: none; color: #00ff00; margin-left: auto;">DOWNLOAD</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Custom Rename Modal -->
+<div id="renameModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">OBJECT_RE-INITIALIZATION</div>
+    <div class="modal-body">
+      <div class="mono" style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">TARGET_PATH: <span
+          id="renamePathDisplay" style="color: var(--accent);"></span></div>
+      <input type="text" id="newNameInput" class="terminal-input" style="margin-bottom: 0;">
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn" onclick="closeModals()">ABORT</button>
+      <button class="terminal-btn" style="width: auto; padding: 10px 30px;" onclick="executeRename()">EXECUTE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Purge Modal -->
+<div id="purgeModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">CONFIRM_OBJECT_PURGE</div>
+    <div class="modal-body">
+      <div class="mono" style="color: var(--accent);">WARNING: This action is irreversible.</div>
+      <div class="mono" style="font-size: 11px; color: var(--muted); margin-top: 10px;">OBJECT: <span
+          id="purgePathDisplay"></span></div>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn" onclick="closeModals()">ABORT</button>
+      <button class="terminal-btn" style="width: auto; padding: 10px 30px; background: var(--accent);"
+        onclick="executePurge()">PURGE_OBJECT</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentTarget = null;
+  let currentElementId = null;
+
+  function openRenameModal(path) {
+    currentTarget = path;
+    const filename = path.split('/').pop();
+    document.getElementById('renamePathDisplay').innerText = path;
+    document.getElementById('newNameInput').value = filename;
+    document.getElementById('renameModal').classList.add('active');
+    document.getElementById('newNameInput').focus();
+  }
+
+  function openPurgeModal(path, elementId) {
+    currentTarget = path;
+    currentElementId = elementId;
+    document.getElementById('purgePathDisplay').innerText = path;
+    document.getElementById('purgeModal').classList.add('active');
+  }
+
+  function closeModals() {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    currentTarget = null;
+    currentElementId = null;
+  }
+
+  function executeRename() {
+    const newName = document.getElementById('newNameInput').value;
+    if (newName) {
+      fetch('/actions/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ old_path: currentTarget, new_name: newName })
+      }).then(res => res.json()).then(data => {
+        if (data.ok) location.reload();
+        else alert("TERMINAL ERROR: " + data.error);
+      });
+    }
+  }
+
+  function executePurge() {
+    fetch('/actions/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: currentTarget })
+    }).then(res => res.json()).then(data => {
+      if (data.ok) {
+        document.getElementById(currentElementId).remove();
+        closeModals();
+      } else alert("TERMINAL ERROR: " + data.error);
+    });
+  }
+</script>
 {% endblock %}

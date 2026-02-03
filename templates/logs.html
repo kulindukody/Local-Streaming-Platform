@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block title %}System Logs // LMS{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
+    <div>
+        <h2 class="section-title" style="margin-bottom: 0;">System_Action_Logs</h2>
+        <div class="mono" style="color: var(--accent); font-size: 11px; margin-top: 5px;">READING: APP.LOG // STATUS:
+            <span id="sync-status">SYNCHRONIZED</span></div>
+    </div>
+    <div class="mono" style="font-size: 10px; color: var(--muted);">AUTO_REFRESH_INTERVAL: 2s</div>
+</div>
+
+<div class="log-terminal" id="terminal">
+    {% for line in logs %}
+    <div class="log-line">
+        {{ line }}
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mono"
+    style="margin-top: 20px; font-size: 11px; color: var(--muted); display: flex; justify-content: space-between;">
+    <span>TOTAL_HISTORY: <span id="log-count">{{ logs | length }}</span> ENTRIES</span>
+    <span>UPLINK: ACTIVE // TERMINAL_READY</span>
+</div>
+
+<script>
+    const terminal = document.getElementById('terminal');
+    const syncStatus = document.getElementById('sync-status');
+    const logCount = document.getElementById('log-count');
+
+    // Auto scroll to bottom
+    terminal.scrollTop = terminal.scrollHeight;
+
+    async function fetchLogs() {
+        try {
+            const response = await fetch('/api/logs');
+            const data = await response.json();
+
+            // Re-render terminal if content changed (simple check)
+            if (data.logs.length > 0) {
+                terminal.innerHTML = data.logs.map(line => `
+                    <div class="log-line">${line}</div>
+                `).join('');
+                logCount.innerText = data.logs.length;
+                terminal.scrollTop = terminal.scrollHeight;
+                syncStatus.innerText = "SYNCHRONIZED";
+                syncStatus.style.color = "var(--accent)";
+            }
+        } catch (e) {
+            syncStatus.innerText = "CONNECTION_LOST";
+            syncStatus.style.color = "red";
+        }
+    }
+
+    // Refresh every 2 seconds
+    setInterval(fetchLogs, 2000);
+</script>
+{% endblock %}
